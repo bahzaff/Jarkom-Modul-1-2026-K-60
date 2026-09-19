@@ -311,10 +311,7 @@ dns || icmp
 paket yang tidak menggunakan DNS maupun ICMP tidak ditampilkan sehingga proses analisis menjadi lebih terfokus.
 
 ### Bukti
-
-> Masukkan screenshot Wireshark setelah menerapkan filter `dns || icmp`.
-
-![Hasil Filter DNS dan ICMP](./img/no6_dns_icmp.png)
+<img width="1359" height="767" alt="Screenshot 2026-09-15 211913" src="https://github.com/user-attachments/assets/48e385d2-83ab-471d-bb3c-77832fe6e392" />
 
 ### Kesimpulan
 
