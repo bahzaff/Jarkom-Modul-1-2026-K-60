@@ -488,13 +488,12 @@ Pengujian ini menunjukkan konsep **authorization**, yaitu pemberian hak akses ya
 
 ### Bukti
 
-> Masukkan screenshot keberhasilan Alice membuat atau mengirim `signal_alice.txt`.
+> keberhasilan Alice membuat atau mengirim `signal_alice.txt`.
+<img width="471" height="84" alt="Screenshot 2026-09-15 223407" src="https://github.com/user-attachments/assets/81651180-bda1-4744-954b-8c4933578c52" />
 
-![Alice Read Write](./img/no7_alice.png)
 
-> Masukkan screenshot penolakan login Eiri.
-
-![Eiri Blacklist](./img/no7_eiri.png)
+> penolakan login Eiri.
+<img width="288" height="86" alt="Screenshot 2026-09-16 005927" src="https://github.com/user-attachments/assets/f89cf14d-518e-4830-9809-50dd01c7fb6c" />
 
 ### Kesimpulan
 
@@ -635,12 +634,15 @@ Port data TCP hasil negosiasi PASV:
 FTP menggunakan **control connection** untuk membawa command seperti login, `PASV`, dan `STOR`, sedangkan isi file dikirim melalui **data connection**.
 
 ### Bukti
+FTP STOR  
 
-![FTP STOR](./img/no8_stor.png)
+<img width="1356" height="647" alt="Screenshot 2026-09-15 234648" src="https://github.com/user-attachments/assets/a9981f66-24a9-4475-b713-69026350a381" />
 
-![FTP Response 226](./img/no8_226.png)
+FTP Response 226  
+<img width="1359" height="704" alt="Screenshot 2026-09-15 234717" src="https://github.com/user-attachments/assets/5d69e5b8-9c8f-4e2d-bbd0-0308bc23d341" />
 
-![FTP Passive Mode](./img/no8_pasv.png)
+FTP Passive Mode  
+<img width="1359" height="719" alt="Screenshot 2026-09-15 234809" src="https://github.com/user-attachments/assets/e9f60c85-1d13-453e-acea-27e08851a503" />
 
 ### Kesimpulan
 
@@ -753,10 +755,11 @@ Response tersebut menunjukkan bahwa FTP Server menolak operasi tulis yang dilaku
 Pengujian ini membuktikan bahwa konfigurasi **read-only** tidak hanya tercantum pada konfigurasi server, tetapi benar-benar diterapkan ketika user mencoba melakukan operasi yang tidak diizinkan.
 
 ### Bukti
+Mika download  
+<img width="579" height="244" alt="Screenshot 2026-09-17 161023" src="https://github.com/user-attachments/assets/efc2170c-50f4-4054-8765-346525159aec" />
 
-![Mika Download](./img/no9_download.png)
-
-![Mika 550 Permission Denied](./img/no9_550.png)
+Mika 550 permission denied  
+<img width="769" height="662" alt="Screenshot 2026-09-17 161135" src="https://github.com/user-attachments/assets/be4e6b89-8f93-492b-943a-4e6a56f19a07" />
 
 ### Kesimpulan
 
@@ -894,12 +897,11 @@ RTT Maximum : [ISI HASIL] ms
 **RTT (Round Trip Time)** menunjukkan waktu yang diperlukan paket untuk berjalan dari Knights menuju Chisa dan respons kembali diterima oleh Knights.
 
 ### Bukti
+ICMP echo request  
+<img width="1359" height="767" alt="Screenshot 2026-09-17 161854" src="https://github.com/user-attachments/assets/bf15299f-195c-4099-9538-514350e25917" />
 
-![Ping Knights Chisa](./img/no10_ping.png)
-
-![ICMP Echo Request](./img/no10_request.png)
-
-![ICMP Echo Reply](./img/no10_reply.png)
+ICMP echo reply  
+<img width="1359" height="767" alt="Screenshot 2026-09-17 161915" src="https://github.com/user-attachments/assets/28169faa-b693-4b2d-a4b7-37364d712b84" />
 
 ### Kesimpulan
 
@@ -1028,10 +1030,13 @@ Pada komunikasi Telnet interaktif, input keyboard juga dapat dikirim secara bert
 Hal ini menunjukkan salah satu alasan Telnet tidak direkomendasikan untuk remote administration pada jaringan yang membutuhkan keamanan.
 
 ### Bukti
+Telnet login  
+<img width="901" height="721" alt="Screenshot 2026-09-17 170557" src="https://github.com/user-attachments/assets/aa882490-6029-4340-bc0d-17ad02778776" />  
+<img width="1359" height="767" alt="Screenshot 2026-09-17 170325" src="https://github.com/user-attachments/assets/6761301b-f808-449f-b674-fb220f12d7d2" />
 
-![Telnet Login](./img/no11_telnet.png)
 
-![Telnet Follow TCP Stream](./img/no11_stream.png)
+Telnet follow TCP stream  
+<img width="1358" height="725" alt="Screenshot 2026-09-17 170738" src="https://github.com/user-attachments/assets/0bf864b9-e3e4-4af9-b56f-e3bb1066eff6" />
 
 ### Kesimpulan
 
@@ -1182,12 +1187,18 @@ SYN → RST/RST-ACK
 Hal tersebut memungkinkan status suatu port dianalisis berdasarkan response TCP yang diterima.
 
 ### Bukti
+Netcat scan  
+<img width="627" height="100" alt="Screenshot 2026-09-17 173730" src="https://github.com/user-attachments/assets/5a0f4462-aff8-4657-afe9-a1737ae3e087" />
 
-![Netcat Scan](./img/no12_nc.png)
 
-![Open Port SYN ACK](./img/no12_open.png)
+Open port SYN ACK  
+<img width="1359" height="723" alt="Screenshot 2026-09-17 173511" src="https://github.com/user-attachments/assets/7bab8a62-aca1-48f8-a35b-913d3c214da3" />
 
-![Closed Port RST ACK](./img/no12_closed.png)
+
+Closed port RST ACK  
+<img width="1358" height="724" alt="Screenshot 2026-09-17 173431" src="https://github.com/user-attachments/assets/a3aa190e-11e4-4778-8f6e-b5e5be20963e" />
+
+
 
 ### Kesimpulan
 
@@ -1415,21 +1426,20 @@ Berbeda dengan Telnet pada Soal 11, isi komunikasi SSH tidak dapat langsung diba
 
 ### Bukti
 
-> Masukkan screenshot keberhasilan koneksi SSH dari Mika menuju Knights.
-
-![SSH Connection](./img/no13_ssh.png)
-
 > Masukkan screenshot Protocol Version Exchange.
+<img width="1360" height="768" alt="Screenshot 2026-09-17 181022" src="https://github.com/user-attachments/assets/2ab304f5-20a8-4ddf-8997-9861c59f3978" />
 
-![SSH Protocol Version Exchange](./img/no13_protocol.png)
+
 
 > Masukkan screenshot proses Key Exchange.
+<img width="1360" height="768" alt="Screenshot 2026-09-17 181241" src="https://github.com/user-attachments/assets/e94873ee-d7e3-40fd-9ba4-6287a1f4a8be" />
 
-![SSH Key Exchange](./img/no13_keyexchange.png)
+
 
 > Masukkan screenshot paket komunikasi terenkripsi.
+<img width="1360" height="768" alt="Screenshot 2026-09-17 181506" src="https://github.com/user-attachments/assets/2ef3cd54-c0ff-4f9d-9e3a-db3b5a006270" />
 
-![SSH Encrypted Packet](./img/no13_encrypted.png)
+
 
 ### Kesimpulan
 
