@@ -8,7 +8,7 @@
 
 # Laporan Praktikum Jaringan Komputer (Soal 1 - 5)
 
-Dokumentasi implementasi topologi jaringan pada simulator GNS3 menggunakan router pusat **Lain** dan entitas client (**Alice**, **Mika**, **Chisa**, **Knights**, **Eiri**). Pembagian pengalamatan IP menggunakan prefix subnet kelompok `10.4.89.0/24`.
+Dokumentasi implementasi topologi jaringan pada simulator GNS3 menggunakan router pusat **Lain** dan entitas client (**Alice**, **Mika**, **Chisa**, **Knights**, **Eiri**). Pembagian pengalamatan IP menggunakan prefix subnet kelompok `10.4.89.250`.
 
 ---
 
