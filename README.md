@@ -1,3 +1,4 @@
+# Praktikum Modul 1 — Komunikasi Data & Jaringan Komputer 2026
 # ANGGOTA KELOMPOK
 
 | Nama | NRP |
@@ -88,7 +89,7 @@ iface eth0 inet static
     netmask 255.255.255.0
     gateway 192.241.3.1
 ```
-# Praktikum Modul 1 — Komunikasi Data & Jaringan Komputer 2026
+
 ## Pengerjaan Soal 6–13
 
 ---
