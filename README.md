@@ -1191,7 +1191,67 @@ Open port SYN ACK
 Closed port RST ACK  
 <img width="1358" height="724" alt="Screenshot 2026-09-17 173431" src="https://github.com/user-attachments/assets/a3aa190e-11e4-4778-8f6e-b5e5be20963e" />
 
+## Tambahan Perbaikan Soal 12 — Verifikasi Status Service Sebelum Port Scanning
 
+### Verifikasi Service pada Knights
+
+Sebelum melakukan port scanning menggunakan Netcat, perlu dipastikan terlebih dahulu bahwa kondisi port pada node **Knights** telah sesuai dengan skenario yang diminta.
+
+Pada pengujian ini:
+
+| Port | Service | Kondisi yang Diharapkan |
+|---:|---|---|
+| 22 | SSH | Open |
+| 80 | HTTP | Open |
+| 7777 | Secret Port | Closed |
+
+Status port ditentukan oleh keberadaan service yang sedang **listening** pada masing-masing port. Netcat tidak digunakan untuk membuka atau menutup port, tetapi digunakan untuk memeriksa status port berdasarkan response yang diberikan oleh target.
+
+Pada node **Knights**, status listening port diperiksa menggunakan:
+
+```bash
+ss -lnt | grep -E ':22|:80|:7777'
+```
+
+Port `22` dan `80` harus muncul dalam kondisi `LISTEN`, yang menunjukkan bahwa terdapat service yang menerima koneksi TCP pada kedua port tersebut.
+
+Sedangkan port `7777` tidak memiliki service yang listening sehingga tidak muncul pada hasil pemeriksaan dan berada dalam kondisi **closed**.
+
+Setelah kondisi service pada Knights sesuai, scanning dilakukan dari node **Alice** menggunakan:
+
+```bash
+nc -zv -w 2 192.241.3.2 22
+nc -zv -w 2 192.241.3.2 80
+nc -zv -w 2 192.241.3.2 7777
+```
+
+Keterangan opsi Netcat:
+
+- `-z` digunakan untuk melakukan pemeriksaan port tanpa mengirimkan data aplikasi.
+- `-v` menampilkan informasi hasil pemeriksaan secara lebih detail.
+- `-w 2` memberikan batas waktu tunggu koneksi selama 2 detik.
+
+### Analisis Tambahan
+
+Hasil Netcat kemudian diverifikasi menggunakan Wireshark.
+
+Pada port yang **open**, ketika Alice mengirim TCP SYN, Knights memberikan response berupa:
+
+```text
+SYN → SYN-ACK
+```
+
+Response `SYN-ACK` menunjukkan bahwa terdapat service yang sedang listening dan bersedia menerima pembentukan koneksi TCP.
+
+Sedangkan pada port `7777` yang **closed**, response yang diperoleh pada pengujian berupa:
+
+```text
+SYN → RST/RST-ACK
+```
+
+Response tersebut menunjukkan bahwa host Knights dapat dijangkau, tetapi tidak terdapat service yang menerima koneksi pada port tersebut.
+
+Dengan demikian, status open atau closed suatu TCP port tidak ditentukan oleh Netcat. Netcat berfungsi sebagai alat untuk melakukan pemeriksaan, sedangkan status port bergantung pada keberadaan service yang sedang listening pada target.
 
 ### Kesimpulan
 
