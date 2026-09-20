@@ -1461,3 +1461,336 @@ Pada **Soal 12**, dilakukan pemeriksaan TCP port menggunakan Netcat. Port terbuk
 Pada **Soal 13**, dilakukan implementasi SSH Public Key Authentication dari Mika menuju Knights. Pasangan public/private key digunakan untuk autentikasi, sedangkan password authentication dinonaktifkan. Packet capture menunjukkan adanya proses Protocol Version Exchange dan Key Exchange sebelum komunikasi terenkripsi berlangsung.
 
 Secara keseluruhan, rangkaian praktikum ini menunjukkan bahwa keberhasilan komunikasi jaringan tidak hanya dapat diperiksa dari sisi aplikasi, tetapi juga dapat dianalisis hingga tingkat paket menggunakan Wireshark. Analisis tersebut dapat digunakan untuk memahami mekanisme kerja protokol, melakukan troubleshooting, memverifikasi kebijakan akses, serta membandingkan aspek keamanan dari berbagai layanan jaringan.
+
+# Laporan Analisis Forensik Jaringan & Packet Inspection (Soal 14 - 20)
+
+Dokumentasi analisis forensik paket jaringan menggunakan Wireshark, Tshark, script otomatisasi Python, dan socket evaluasi Netcat pada server `10.4.89.250`.
+
+---
+
+## Soal 14 - Protocol 7: Brute Force Analysis
+
+### 1. Deskripsi & Langkah Analisis
+Pada skenario ini, penyerang melakukan serangan *brute-force* terhadap form login web Alice[cite: 9].
+1. Buka file pcap di Wireshark[cite: 9].
+2. Karena targetnya adalah form login web, lalu lintas data pengiriman kredensial akun menggunakan protokol HTTP dengan metode `POST`[cite: 9]. Terapkan display filter:
+   ```text
+   http.request.method == "POST"
+   ```
+3. Amati paket-paket POST yang tersaring[cite: 9]. Pilih salah satu paket request paling bawah, klik kanan lalu pilih **Follow** $\rightarrow$ **HTTP Stream**[cite: 9].
+4. Di dalam jendela HTTP Stream, amati percakapan teks antara klien penyerang dan server[cite: 9]:
+   * Header request memuat kredensial akun yang dikirimkan[cite: 9].
+   * Header response dan body HTTP memuat status keberhasilan login (`200 OK`) serta identitas software web server[cite: 9].
+
+### 2. Poin-Poin Penemuan & Cara Analisis
+* **IP Penyerang (Source):** `172.26.7.50`[cite: 9]  
+  *Cara Analisis:* Ditemukan pada kolom **Source** pada daftar paket yang tersaring oleh filter HTTP POST[cite: 9].
+* **Target IP & Port:** `172.26.7.100:8080`[cite: 9]  
+  *Cara Analisis:* Terlihat langsung pada header `Host: 172.26.7.100:8080` di awal percakapan HTTP Stream[cite: 9].
+* **Password Ditemukan (`lain_admin`):** `wired_protocol_7`[cite: 9]  
+  *Cara Analisis:* Ditemukan pada isi payload body POST terakhir yang menghasilkan balasan respon `<h1>Success! Login successful.</h1>`[cite: 9].
+* **Software Web Server & Versi:** `Apache/2.4.62`[cite: 9]  
+  *Cara Analisis:* Dibaca langsung dari nilai baris header `Server:` pada HTTP response dari sisi server[cite: 9].
+
+### 3. Dokumentasi Screenshot
+![Filter POST & Daftar Paket Soal 14](assets/soal14_wireshark_filter.png)
+*Gambar 14.1: Penyaringan paket HTTP POST dan detail IP target.*
+
+![Follow HTTP Stream Soal 14](assets/soal14_http_stream.png)
+*Gambar 14.2: Percakapan HTTP Stream yang memperlihatkan password dan banner Apache/2.4.62.*
+
+![Submit Netcat Soal 14](assets/soal14_netcat_flag.png)
+*Gambar 14.3: Eksekusi nc 10.4.89.250 3401 dan flag yang didapatkan.*
+
+### 4. Hasil Flag
+```text
+KOMJAR26{W1r3d_Brut3_ZzLJzlBe7952zMyo10uBMHyzQ}
+```
+[cite: 9]
+
+---
+
+## Soal 15 - Protocol 7: USB Keystroke Decoding
+
+### 1. Deskripsi & Langkah Analisis
+Skenario menganalisis perangkat USB Keyboard (Human Interface Device) yang menyuntikkan ketikan pesan rahasia secara otomatis[cite: 9].
+1. Gunakan display filter Wireshark `usbhid.data` atau `usb` untuk mengamati transmisi interrupt data USB (`URB_INTERRUPT in`)[cite: 9].
+2. Periksa device descriptor untuk mendapatkan Vendor ID, Product ID, serta nomor alamat perangkat USB yang terpasang[cite: 9].
+3. Untuk mempercepat ekstraksi, jalankan perintah `tshark` melalui WSL/terminal untuk membaca spesifikasi descriptor perangkat:
+   ```bash
+   tshark -r soal15_wired_usb_hid.pcap -Y "usb.bDescriptorType == 1" -T fields -e usb.device_address -e usb.idVendor -e usb.idProduct
+   ```
+  [cite: 9]
+4. Ekstrak data biner hex ketikan keyboard ke dalam file `hexadata.txt`:
+   ```bash
+   tshark -r soal15_wired_usb_hid.pcap -Y "usb.capdata || usbhid.data" -T fields -e usb.capdata -e usbhid.data > hexadata.txt
+   ```
+  [cite: 9]
+5. Buat dan jalankan script Python penerjemah kode USB HID Usage ID ke format teks ASCII:
+   ```python
+   lut = {
+       4: "a", 5: "b", 6: "c", 7: "d", 8: "e", 9: "f", 10: "g", 11: "h", 12: "i",
+       13: "j", 14: "k", 15: "l", 16: "m", 17: "n", 18: "o", 19: "p", 20: "q",
+       21: "r", 22: "s", 23: "t", 24: "u", 25: "v", 26: "w", 27: "x", 28: "y", 29: "z",
+       30: "1", 31: "2", 32: "3", 33: "4", 34: "5", 35: "6", 36: "7", 37: "8", 38: "9", 39: "0",
+       44: " ", 45: "_"
+   }
+   lut_s = {
+       4: "A", 5: "B", 6: "C", 7: "D", 8: "E", 9: "F", 10: "G", 11: "H", 12: "I",
+       13: "J", 14: "K", 15: "L", 16: "M", 17: "N", 18: "O", 19: "P", 20: "Q",
+       21: "R", 22: "S", 23: "T", 24: "U", 25: "V", 26: "W", 27: "X", 28: "Y", 29: "Z"
+   }
+
+   res = []
+   with open("hexadata.txt") as f:
+       for line in f:
+           line = line.strip()
+           if not line or len(line) < 6:
+               continue
+           mod, code = int(line[0:2], 16), int(line[4:6], 16)
+           if code == 0:
+               continue
+           char = (lut_s if (mod & 0x22) else lut).get(code, "")
+           res.append(char)
+
+   print("HASIL DEKODE PESAN RAHASIA:\n" + "".join(res))
+   ```
+  [cite: 9]
+
+### 2. Poin-Poin Penemuan & Cara Analisis
+* **Vendor ID Perangkat:** `0x046d` (Logitech, Inc.)[cite: 9]  
+  *Cara Analisis:* Diperoleh dari pembacaan field `idVendor` pada Device Descriptor melalui filter `usb.bDescriptorType == 1`[cite: 9].
+* **Product ID Perangkat:** `0xc31c` (Keyboard K120)[cite: 9]  
+  *Cara Analisis:* Diperoleh dari pembacaan field `idProduct` pada baris Device Descriptor USB yang sama[cite: 9].
+* **Device Address USB:** `7`[cite: 9]  
+  *Cara Analisis:* Dilihat pada detail paket transmisi URB Interrupt `Source: 2.7.1` di mana angka tengah menunjukkan nomor address perangkat[cite: 9].
+* **Pesan Rahasia:** `Wired_Protocol_7_is_alive_2026`[cite: 9]  
+  *Cara Analisis:* Dihasilkan dari konversi nilai byte hex pada `hexadata.txt` menggunakan script mapping USB HID Usage ID[cite: 9].
+
+### 3. Dokumentasi Screenshot
+![Analisis USB di Wireshark Soal 15](assets/soal15_wireshark_hid.png)
+*Gambar 15.1: Device descriptor dan paket interrupt transfer USB.*
+
+![Ekstraksi Tshark Soal 15](assets/soal15_tshark_hexadata.png)
+*Gambar 15.2: Ekstraksi descriptor dan dump hexadata via Tshark.*
+
+![Dekode Script Python Soal 15](assets/soal15_python_decode.png)
+*Gambar 15.3: Eksekusi script Python yang menampilkan pesan rahasia.*
+
+![Submit Netcat Soal 15](assets/soal15_netcat_flag.png)
+*Gambar 15.4: Eksekusi nc 10.4.89.250 3402 dan penerbitan flag.*
+
+### 4. Hasil Flag
+```text
+KOMJAR26{USB_K3ystr0k3_sSJ060piew1Pcpu7i2CVs8pjd}
+```
+
+---
+
+## Soal 16 - Protocol 7: FTP Credential Theft
+
+### 1. Deskripsi & Langkah Analisis
+Skenario pencurian kredensial FTP dan pengunduhan file malware dari server remote.
+1. Buka pcap dan terapkan filter protokol FTP:
+   ```text
+   ftp
+   ```
+2. Temukan alamat server FTP tujuan pada kolom Destination.
+3. Klik kanan pada paket perintah FTP lalu pilih **Follow** $\rightarrow$ **TCP Stream** (Stream 6).
+4. Catat banner sambutan server pada kode respons `220`.
+5. Periksa baris `USER` dan `PASS` untuk memperoleh kredensial akun penyerang.
+6. Periksa respons kode `213` setelah pemanggilan `SIZE knights_payload.exe` untuk mencatat ukuran total file malware yang ditarik.
+
+### 2. Poin-Poin Penemuan & Cara Analisis
+* **IP Server FTP:** `198.51.100.7`  
+  *Cara Analisis:* Dilihat langsung pada kolom **Destination** pada paket permintaan koneksi awal protokol FTP.
+* **Banner Software Server:** `vsftpd 3.0.5`  
+  *Cara Analisis:* Dibaca dari baris sambutan respon kode `220` saat koneksi FTP pertama kali tersambung.
+* **Kredensial Login:** `knights_agent:N4v1_s3cur3_2026`  
+  *Cara Analisis:* Ditemukan pada baris perintah `USER knights_agent` dan `PASS N4v1_s3cur3_2026` di TCP Stream.
+* **Ukuran File Malware (`knights_payload.exe`):** `524288` bytes  
+  *Cara Analisis:* Dilihat pada angka balasan respon kode `213` setelah perintah query `SIZE knights_payload.exe` dikirimkan.
+
+### 3. Dokumentasi Screenshot
+![Daftar Paket FTP Soal 16](assets/soal16_wireshark_ftp.png)
+*Gambar 16.1: Aliran paket protokol FTP pada Wireshark.*
+
+![TCP Stream FTP Soal 16](assets/soal16_tcp_stream.png)
+*Gambar 16.2: Detail kredensial USER/PASS dan ukuran file binary.*
+
+![Submit Netcat Soal 16](assets/soal16_netcat_flag.png)
+*Gambar 16.3: Validasi jawaban di nc 10.4.89.250 3403 dan flag.*
+
+### 4. Hasil Flag
+```text
+KOMJAR26{FTP_Th3ft_DMcRHaaC4z8e5ZEn1l2XV0n1M}
+```
+
+---
+
+## Soal 17 - Protocol 7: HTTP Malware Retrieval
+
+### 1. Deskripsi & Langkah Analisis
+Investigasi pengunduhan payload eksekusi malware yang dikomunikasikan melalui web server C2 berbasis HTTP.
+1. Terapkan display filter HTTP request:
+   ```text
+   http.request.method == "GET"
+   ```
+2. Temukan paket request pengunduhan file eksekusi berbahaya `GET /navi_agent.exe HTTP/1.1`.
+3. Klik kanan paket tersebut dan pilih **Follow** $\rightarrow$ **HTTP Stream** (Stream 4).
+4. Amati informasi header HTTP:
+   * Baris header `Host:` memuat domain penyedia payload.
+   * Kolom Destination IP pada paket request memuat alamat IP web server.
+   * Nama file eksekusi pada `Content-Disposition`.
+   * Status response code balasan server pada pengiriman file.
+
+### 2. Poin-Poin Penemuan & Cara Analisis
+* **Domain Name (Host):** `wired-update.net`  
+  *Cara Analisis:* Ditemukan pada baris header `Host: wired-update.net` di dalam request HTTP GET.
+* **IP Address Server Web:** `203.0.113.42`  
+  *Cara Analisis:* Diambil dari kolom **Destination IP** pada paket pengunduhan file `navi_agent.exe`.
+* **Filename Malware Payload:** `navi_agent.exe`  
+  *Cara Analisis:* Terlihat pada path URL request `GET /navi_agent.exe` serta parameter filename di header `Content-Disposition`.
+* **HTTP Status Code Response:** `200`  
+  *Cara Analisis:* Dibaca dari baris pertama balasan server `HTTP/1.1 200 OK` yang menandakan payload berhasil diunduh.
+
+### 3. Dokumentasi Screenshot
+![Filter HTTP GET Soal 17](assets/soal17_wireshark_get.png)
+*Gambar 17.1: Paket GET /navi_agent.exe dan alamat IP server.*
+
+![HTTP Stream C2 Soal 17](assets/soal17_http_stream.png)
+*Gambar 17.2: Detail header HTTP Stream host domain dan status 200 OK.*
+
+![Submit Netcat Soal 17](assets/soal17_netcat_flag.png)
+*Gambar 17.3: Verifikasi data via nc 10.4.89.250 3404 dan perolehan flag.*
+
+### 4. Hasil Flag
+```text
+KOMJAR26{HTTP_M4lw4r3_D0wnl04d_P7_k9XyZa1}
+```
+
+---
+
+## Soal 18 - Protocol 7: SMB Lateral Transfer
+
+### 1. Deskripsi & Langkah Analisis
+Pemeriksaan transmisi pergerakan lateral (*lateral movement*) malware antar-host internal melalui mekanisme Windows file sharing.
+1. Pasang display filter protokol Server Message Block:
+   ```text
+   smb2
+   ```
+2. Identifikasi host sumber yang mengirimkan file dan host penerima/korban pada kolom Source dan Destination.
+3. Klik kanan paket transmisi penulisan file SMB lalu pilih **Follow** $\rightarrow$ **TCP Stream** (Stream 0).
+4. Telusuri string teks di dalam session stream untuk mengidentifikasi folder target dan nama payload trojan yang disuntikkan ke dalam sistem target.
+
+### 2. Poin-Poin Penemuan & Cara Analisis
+* **Protokol File Sharing:** `smb`  
+  *Cara Analisis:* Teridentifikasi dari port 445 dan format header protokol SMB2 (Server Message Block) pada daftar paket.
+* **IP Host Pengirim (Source):** `10.7.3.100`  
+  *Cara Analisis:* Dilihat pada kolom **Source** paket SMB2 `Write Request` yang mengunggah file.
+* **IP Host Korban (Destination):** `10.7.1.50`  
+  *Cara Analisis:* Dilihat pada kolom **Destination** target penerima file pada transaksi SMB yang sama.
+* **Target Share/Direktori Tujuan:** `system32`  
+  *Cara Analisis:* Ditemukan di dalam payload session TCP Stream saat proses penulisan file ke direktori sistem Windows.
+* **Filename Malware Trojan:** `wired_trojan_payload.exe`  
+  *Cara Analisis:* Terbaca pada parameter nama file di baris `Create Request File` pada aliran data SMB.
+
+### 3. Dokumentasi Screenshot
+![Daftar Transaksi SMB2 Soal 18](assets/soal18_wireshark_smb.png)
+*Gambar 18.1: Traffic file transfer SMB2 pada Wireshark.*
+
+![TCP Stream SMB Soal 18](assets/soal18_tcp_stream.png)
+*Gambar 18.2: Payload string exploit, direktori system32, dan nama trojan.*
+
+![Submit Netcat Soal 18](assets/soal18_netcat_flag.png)
+*Gambar 18.3: Evaluasi via nc 10.4.89.250 3405 dan penerimaan flag.*
+
+### 4. Hasil Flag
+```text
+KOMJAR26{SMB_Tr4nsf3r_3pe2czTNSHsxVQsqdAFh7LfPX}
+```
+
+---
+
+## Soal 19 - Protocol 7: SMTP Threat Inspection
+
+### 1. Deskripsi & Langkah Analisis
+Pemeriksaan surat elektronik pemerasan dan ancaman penyebaran ransomware melalui protokol email.
+1. Terapkan display filter komunikasi mail server:
+   ```text
+   smtp
+   ```
+2. Amati transaksi pengiriman pesan ke mail server target port 25.
+3. Klik kanan pada paket perintah transaksi pesan SMTP lalu pilih **Follow** $\rightarrow$ **TCP Stream** (Stream 6).
+4. Baca badan isi surat secara menyeluruh untuk mengekstrak identitas korban, klaim kebocoran sandi, jenis malware, tenggat waktu pemerasan, dan ID unik klien pengirim.
+
+### 2. Poin-Poin Penemuan & Cara Analisis
+* **Email Target Korban:** `victim@protocol7.co.jp`  
+  *Cara Analisis:* Ditemukan pada baris perintah `RCPT TO:<victim@protocol7.co.jp>` di TCP Stream SMTP.
+* **Password Korban yang Dicuri:** `protocol_7_user`  
+  *Cara Analisis:* Dibaca langsung di baris pembuka isi badan surat yang menyebutkan password akun milik korban.
+* **Tipe Malware Pemerasan:** `ransomware`  
+  *Cara Analisis:* Teridentifikasi dari kalimat ancaman enkripsi data file sistem di dalam teks pesan email.
+* **Tenggat Waktu Pembayaran (Deadline):** `3` (hari)  
+  *Cara Analisis:* Ditemukan pada batas waktu pembayaran tebusan yang disebutkan di kalimat batas waktu email.
+* **MailClientID:** `7719980706`  
+  *Cara Analisis:* Diambil dari nilai header kustom `X-MailClientID:` pada bagian atas header email.
+
+### 3. Dokumentasi Screenshot
+![Filter SMTP Wireshark Soal 19](assets/soal19_wireshark_smtp.png)
+*Gambar 19.1: Paket transaksi SMTP pengiriman surat ancaman.*
+
+![TCP Stream Email Soal 19](assets/soal19_tcp_stream.png)
+*Gambar 19.2: Isi percakapan lengkap email ancaman dan parameter pemerasan.*
+
+![Submit Netcat Soal 19](assets/soal19_netcat_flag.png)
+*Gambar 19.3: Validasi jawaban lewat nc 10.4.89.250 3406 dan flag.*
+
+### 4. Hasil Flag
+```text
+KOMJAR26{SMTP_Ext0rt10n_KgpgvyGDxMsG1wGwLRGzNyD4r}
+```
+
+---
+
+## Soal 20 - Protocol 7: TLS Decrypted Stream
+
+### 1. Deskripsi & Langkah Analisis
+Melakukan dekripsi sesi jaringan terenkripsi TLS untuk menganalisis muatan HTTP di dalamnya.
+1. Pasang display filter `tls` di Wireshark untuk memeriksa proses negosiasi handshake aman dan mencatat IP server HTTPS serta versi TLS yang digunakan.
+2. Masukkan file log kunci enkripsi (*pre-master secret*) ke Wireshark:
+   * Buka menu **Edit** $\rightarrow$ **Preferences...**
+   * Pilih menu **Protocols** $\rightarrow$ **TLS**.
+   * Pada kolom **(Pre)-Master-Secret log filename**, klik **Browse** lalu arahkan ke file `.log` / `.txt` kunci SSL/TLS yang disediakan. Klik **OK**.
+3. Setelah sesi terdekripsi otomatis oleh Wireshark, cari paket HTTP yang muncul, klik kanan lalu pilih **Follow** $\rightarrow$ **TLS Stream** (Stream 0).
+4. Amati request method, domain Host / SNI, serta identitas User-Agent klien.
+
+### 2. Poin-Poin Penemuan & Cara Analisis
+* **Versi Protokol TLS:** `TLSv1.2`  
+  *Cara Analisis:* Dilihat pada detail protokol paket `Server Hello` pada proses negosiasi TLS handshake.
+* **Domain Name (SNI / Host):** `example.com`  
+  *Cara Analisis:* Ditemukan pada ekstensi `server_name` pada paket `Client Hello` serta header `Host:` pada stream terdekripsi.
+* **IP Server HTTPS:** `93.184.216.34`  
+  *Cara Analisis:* Dilihat pada kolom **Destination IP** saat handshake TLS berlangsung ke port 443.
+* **User-Agent Client:** `curl/7.62.0`  
+  *Cara Analisis:* Terbaca jelas pada baris header `User-Agent:` di dalam jendela TLS Stream setelah didekripsi.
+* **HTTP Request Method & Path:** `HEAD / HTTP/1.1`  
+  *Cara Analisis:* Dilihat pada baris pertama HTTP request terdekripsi yang menggunakan metode request `HEAD`.
+
+### 3. Dokumentasi Screenshot
+![Handshake TLS Soal 20](assets/soal20_wireshark_tls.png)
+*Gambar 20.1: Paket negosiasi handshake TLSv1.2.*
+
+![Konfigurasi SSL Key Log Soal 20](assets/soal20_tls_preferences.png)
+*Gambar 20.2: Pemasangan path Pre-Master Secret Log di Preferences Wireshark.*
+
+![Decrypted TLS Stream Soal 20](assets/soal20_tls_stream.png)
+*Gambar 20.3: Stream transaksi terdekripsi (HEAD request dan curl User-Agent).*
+
+![Submit Netcat Soal 20](assets/soal20_netcat_flag.png)
+*Gambar 20.4: Pemasukan parameter di nc 10.4.89.250 3407 dan flag penutup.*
+
+### 4. Hasil Flag
+```text
+KOMJAR26{TLS_D3crypt_kz8TtZ3mAeGNomkr2fgtnmnjG}
+```
