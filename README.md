@@ -1741,7 +1741,8 @@ Pemeriksaan surat elektronik pemerasan dan ancaman penyebaran ransomware melalui
 ![Filter SMTP Wireshark Soal 19](assets/soal19_wireshark_smtp.png)
 *Gambar 19.1: Paket transaksi SMTP pengiriman surat ancaman.*
 
-![TCP Stream Email Soal 19](assets/soal19_tcp_stream.png)
+![TCP Stream Email Soal 19](assets/soal19_tcp_stream.png).
+![TCP Stream Email Soal 19](assets/soal19_tcp_stream2.png)
 *Gambar 19.2: Isi percakapan lengkap email ancaman dan parameter pemerasan.*
 
 ![Submit Netcat Soal 19](assets/soal19_netcat_flag.png)
