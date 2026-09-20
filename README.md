@@ -8,40 +8,39 @@
 
 # Laporan Praktikum Jaringan Komputer (Soal 1 - 5)
 
-Dokumentasi implementasi topologi jaringan pada simulator GNS3 menggunakan router pusat **Lain** dan entitas client (**Alice**, **Mika**, **Chisa**, **Knights**, **Eiri**). Pembagian pengalamatan IP menggunakan prefix subnet kelompok `10.4.89.250`.
+Dokumentasi implementasi topologi jaringan pada simulator GNS3 menggunakan router pusat **Lain** dan entitas client (**Alice**, **Mika**, **Chisa**, **Knights**, **Eiri**). Pembagian pengalamatan IP menggunakan prefix kelompok **K-60** yaitu `192.241.x.x` dengan alokasi subnet mask `/24` (`255.255.255.0`) per switch.
 
 ---
 
 ## 1. Topologi & Pengalamatan IP Antar-Node
 
 Masing-masing entitas client dihubungkan melalui tiga switch yang berpusat pada router **Lain**:
-* **Switch 1:** Menghubungkan client **Alice** dan **Mika**
-* **Switch 2:** Menghubungkan client **Chisa**
-* **Switch 3:** Menghubungkan client **Knights** dan **Eiri**
+* **Switch 1 (192.241.1.0/24):** Menghubungkan client **Alice** dan **Mika**
+* **Switch 2 (192.241.2.0/24):** Menghubungkan client **Chisa**
+* **Switch 3 (192.241.3.0/24):** Menghubungkan client **Knights** dan **Eiri**
 
 ### Konfigurasi Antarmuka Jaringan
 
-Jalankan script konfigurasi statis di file `/etc/network/interfaces` pada setiap node:
+Jalankan script konfigurasi penulisan file `/etc/network/interfaces` pada setiap node:
 
 #### Node: Lain (Router Utama)
 ```bash
 cat << 'EOF' > /etc/network/interfaces
 auto eth1
 iface eth1 inet static
-    address 10.4.89.1
-    netmask 255.255.255.192
+    address 192.241.1.1
+    netmask 255.255.255.0
 
 auto eth2
 iface eth2 inet static
-    address 10.4.89.65
-    netmask 255.255.255.192
+    address 192.241.2.1
+    netmask 255.255.255.0
 
 auto eth3
 iface eth3 inet static
-    address 10.4.89.129
-    netmask 255.255.255.192
+    address 192.241.3.1
+    netmask 255.255.255.0
 EOF
-service networking restart
 ```
 
 #### Node: Alice (Switch 1)
@@ -49,11 +48,10 @@ service networking restart
 cat << 'EOF' > /etc/network/interfaces
 auto eth0
 iface eth0 inet static
-    address 10.4.89.2
-    netmask 255.255.255.192
-    gateway 10.4.89.1
+    address 192.241.1.2
+    netmask 255.255.255.0
+    gateway 192.241.1.1
 EOF
-service networking restart
 ```
 
 #### Node: Mika (Switch 1)
@@ -61,11 +59,10 @@ service networking restart
 cat << 'EOF' > /etc/network/interfaces
 auto eth0
 iface eth0 inet static
-    address 10.4.89.3
-    netmask 255.255.255.192
-    gateway 10.4.89.1
+    address 192.241.1.3
+    netmask 255.255.255.0
+    gateway 192.241.1.1
 EOF
-service networking restart
 ```
 
 #### Node: Chisa (Switch 2)
@@ -73,11 +70,10 @@ service networking restart
 cat << 'EOF' > /etc/network/interfaces
 auto eth0
 iface eth0 inet static
-    address 10.4.89.66
-    netmask 255.255.255.192
-    gateway 10.4.89.65
+    address 192.241.2.2
+    netmask 255.255.255.0
+    gateway 192.241.2.1
 EOF
-service networking restart
 ```
 
 #### Node: Knights (Switch 3)
@@ -85,11 +81,10 @@ service networking restart
 cat << 'EOF' > /etc/network/interfaces
 auto eth0
 iface eth0 inet static
-    address 10.4.89.130
-    netmask 255.255.255.192
-    gateway 10.4.89.129
+    address 192.241.3.2
+    netmask 255.255.255.0
+    gateway 192.241.3.1
 EOF
-service networking restart
 ```
 
 #### Node: Eiri (Switch 3)
@@ -97,15 +92,14 @@ service networking restart
 cat << 'EOF' > /etc/network/interfaces
 auto eth0
 iface eth0 inet static
-    address 10.4.89.131
-    netmask 255.255.255.192
-    gateway 10.4.89.129
+    address 192.241.3.3
+    netmask 255.255.255.0
+    gateway 192.241.3.1
 EOF
-service networking restart
 ```
 
 ### Pengujian
-Periksa alokasi antarmuka pada router **Lain** dan salah satu client:
+Restart seluruh node melalui panel kontrol GNS3 agar konfigurasi antarmuka terbaca oleh sistem, lalu periksa status alokasi IP pada router **Lain** dan salah satu client:
 ```bash
 ip -br a
 ```
@@ -128,7 +122,7 @@ ifup eth0
 ```
 
 ### Pengujian
-Verifikasi penerimaan IP dinamis dan uji koneksi internet publik dari router:
+Verifikasi penerimaan IP dinamis dari modul NAT1 dan uji koneksi internet publik dari router:
 ```bash
 ip a show dev eth0
 ping -c 3 8.8.8.8
@@ -138,7 +132,7 @@ ping -c 3 8.8.8.8
 
 ## 3. Konfigurasi Routing Antar-Subnet Switch
 
-Mengaktifkan fitur IPv4 packet forwarding pada kernel router **Lain** agar seluruh entitas client di bawah Switch 1, Switch 2, dan Switch 3 dapat saling berkomunikasi.
+Mengaktifkan fitur IPv4 packet forwarding pada kernel router **Lain** agar seluruh entitas client di bawah Switch 1, Switch 2, dan Switch 3 dapat saling bertukar paket.
 
 ### Konfigurasi (Node: Lain)
 ```bash
@@ -149,15 +143,15 @@ sysctl -w net.ipv4.ip_forward=1
 ### Pengujian
 Lakukan uji komunikasi paket ICMP dari node **Alice** (Switch 1) ke **Chisa** (Switch 2) dan **Eiri** (Switch 3):
 ```bash
-ping -c 3 10.4.89.66
-ping -c 3 10.4.89.131
+ping -c 3 192.241.2.2
+ping -c 3 192.241.3.3
 ```
 
 ---
 
 ## 4. NAT Masquerade & DNS Resolver Client
 
-Konfigurasi internet sharing menggunakan aturan `MASQUERADE` iptables pada router **Lain** serta penambahan DNS resolver pada client agar setiap entitas dapat mengakses internet dan meresolusi nama domain secara mandiri
+Konfigurasi internet sharing menggunakan aturan `MASQUERADE` iptables pada router **Lain** serta penambahan DNS resolver pada client agar setiap entitas dapat mengakses internet dan meresolusi nama domain secara mandiri.
 
 ### Konfigurasi Router (Node: Lain)
 ```bash
@@ -183,7 +177,7 @@ ping -c 3 google.com
 
 ## 5. Persistensi Konfigurasi & Script Monitoring Status
 
-Menyimpan aturan iptables dan IP forwarding ke dalam file profile startup router agar tidak terhapus ketika sistem melakukan *reboot*. Selain itu, dibuat script otomatisasi `/root/cek_status.sh` untuk menampilkan ringkasan interface dan tabel NAT.
+Menyimpan aturan iptables dan IP forwarding ke dalam file profile startup router agar tidak terhapus ketika sistem melakukan reboot. Selain itu, dibuat script otomatisasi `/root/cek_status.sh` untuk menampilkan ringkasan interface dan tabel NAT.
 
 ### Konfigurasi & Pembuatan Script (Node: Lain)
 ```bash
@@ -212,7 +206,6 @@ Jalankan script verifikasi langsung dari direktori root pada router **Lain**:
 ```bash
 /root/cek_status.sh
 ```
-
 ## Pengerjaan Soal 6–13
 
 ---
