@@ -1569,6 +1569,7 @@ Skenario menganalisis perangkat USB Keyboard (Human Interface Device) yang menyu
 
 ### 3. Dokumentasi Screenshot
 ![Analisis USB di Wireshark Soal 15](assets/soal15_wireshark_hid.png)
+![Analisis USB di Wireshark Soal 15](assets/soal15_wireshark_hid2.png)
 *Gambar 15.1: Device descriptor dan paket interrupt transfer USB.*
 
 ![Ekstraksi Tshark Soal 15](assets/soal15_tshark_hexadata.png)
